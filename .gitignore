@@ -1,0 +1,9 @@
+# Tajne i lokalna podesavanja
+.env
+*.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
