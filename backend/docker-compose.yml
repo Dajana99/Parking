@@ -1,0 +1,22 @@
+# Za sada samo baza. Backend, Mosquitto i simulator se dodaju kasnije (spec. 6.1).
+# Pokretanje: docker compose up -d   (cita vrednosti iz .env u istom folderu)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: smartpark-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-smartpark}
+      POSTGRES_USER: ${DB_USER:-smartpark}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Postavi DB_PASSWORD u .env}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - smartpark-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-smartpark} -d ${DB_NAME:-smartpark}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  smartpark-db-data:
