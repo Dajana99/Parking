@@ -77,6 +77,51 @@ class PriceList {
         noShowFine = (json['noShowFine'] as num).toDouble();
 }
 
+// stanja rezervacije - iste vrednosti kao ReservationStatus na backendu
+enum ReservationStatus {
+  kreirana('KREIRANA', 'Kreirana'),
+  potvrdjena('POTVRDJENA', 'Potvrđena'),
+  otkazana('OTKAZANA', 'Otkazana'),
+  istekla('ISTEKLA', 'Istekla'),
+  aktivna('AKTIVNA', 'Parkiranje u toku'),
+  placanjeNeuspesno('PLACANJE_NEUSPESNO', 'Plaćanje neuspešno'),
+  zavrsena('ZAVRSENA', 'Završena');
+
+  const ReservationStatus(this.apiValue, this.label);
+  final String apiValue;
+  final String label;
+
+  // vozac moze da otkaze samo rezervaciju pre pocetka parkiranja (FR-10)
+  bool get canCancel => this == kreirana || this == potvrdjena;
+
+  static ReservationStatus fromApi(String value) =>
+      values.firstWhere((s) => s.apiValue == value, orElse: () => kreirana);
+}
+
+// rezervacija
+class Reservation {
+  final int id;
+  final int lotId;
+  final String lotName;
+  final int spotId;
+  final String spotNumber;
+  final String plateNumber;
+  final DateTime startAt;
+  final DateTime endAt;
+  final ReservationStatus status;
+
+  Reservation.fromJson(Map<String, dynamic> json)
+      : id = (json['id'] as num).toInt(),
+        lotId = (json['lotId'] as num).toInt(),
+        lotName = json['lotName'] as String,
+        spotId = (json['spotId'] as num).toInt(),
+        spotNumber = json['spotNumber'] as String,
+        plateNumber = json['plateNumber'] as String,
+        startAt = DateTime.parse(json['startAt'] as String).toLocal(),
+        endAt = DateTime.parse(json['endAt'] as String).toLocal(),
+        status = ReservationStatus.fromApi(json['status'] as String);
+}
+
 //
 
 class ParkingApi {
@@ -109,7 +154,39 @@ class ParkingApi {
     }
   }
 
+  // POST /api/reservations - nova rezervacija
+  Future<Reservation> createReservation({
+    required int spotId,
+    required String plateNumber,
+    required DateTime startAt,
+    required DateTime endAt,
+  }) async {
+    final json = await _api.post('/reservations', {
+      'spotId': spotId,
+      'plateNumber': plateNumber.trim(),
+      'startAt': startAt.toUtc().toIso8601String(),
+      'endAt': endAt.toUtc().toIso8601String(),
+    });
+    return Reservation.fromJson(json);
+  }
+
+  // GET /api/reservations/my - rezervacije vozaca
+  Future<List<Reservation>> myReservations() async {
+    final list = await _api.get('/reservations/my') as List;
+    return list.map((e) => Reservation.fromJson(e)).toList()
+      ..sort((a, b) => b.startAt.compareTo(a.startAt));
+  }
+
+  // POST /api/reservations/{id}/cancel - otkazivanje rezervacije
+  Future<void> cancelReservation(int id) => _api.post('/reservations/$id/cancel');
+
   // Backend ocekuje vreme sa vremenskom zonom, npr. 2026-12-01T10:00:00Z
   static String _iso(DateTime t) =>
       Uri.encodeQueryComponent(t.toUtc().toIso8601String());
 }
+
+// prikaz datuma i vremena
+
+String _two(int n) => n.toString().padLeft(2, '0');
+String formatDate(DateTime t) => '${_two(t.day)}.${_two(t.month)}.${t.year}.';
+String formatTime(DateTime t) => '${_two(t.hour)}:${_two(t.minute)}';

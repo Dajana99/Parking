@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../auth.dart';
 import 'lots_screen.dart';
+import 'reservation_screens.dart';
 
 // pocetni ekran - prikazuje funkcije u zavisnosti od uloge
 // stavke koje jos nisu napravljene imaju oznaku "uskoro"
@@ -72,9 +73,10 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // koji ekran otvara stavku
+  // otvaranje drugih stranica
   static Widget? _screenFor(String title) => switch (title) {
         'Lokacije i mesta' => const LotsScreen(),
+        'Moje rezervacije' => const MyReservationsScreen(),
         _ => null,
       };
 }

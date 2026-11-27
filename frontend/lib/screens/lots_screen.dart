@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../api.dart';
 import '../auth.dart';
 import '../parking.dart';
+import 'reservation_screens.dart';
 
 // LISTA LOKACIJA
 
@@ -26,7 +27,9 @@ class _LotsScreenState extends State<LotsScreen> {
   Future<List<Lot>> _load() => ParkingApi(context.read<ApiClient>()).lots();
 
   Future<void> _refresh() async {
-    setState(() => _lots = _load());
+    setState(() {
+      _lots = _load();
+    });
     await _lots;
   }
 
@@ -116,12 +119,15 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _data = _load());
+    setState(() {
+      _data = _load();
+    });
     await _data;
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDriver = context.watch<AuthProvider>().user?.role == UserRole.vozac;
     return Scaffold(
       appBar: AppBar(title: Text(widget.lot.name)),
       body: FutureBuilder(
@@ -142,6 +148,20 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
                 Text(widget.lot.address),
                 const SizedBox(height: 16),
                 _PriceCard(priceList),
+                // rezervise samo vozac i samo ako lokacija ima cenovnik
+                if (isDriver && priceList != null) ...[
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.event_available),
+                    label: const Text('Rezerviši mesto'),
+                    onPressed: () async {
+                      final done = await Navigator.push<bool>(context,
+                          MaterialPageRoute(
+                              builder: (_) => NewReservationScreen(lot: widget.lot)));
+                      if (done == true) _refresh(); // osvezi statuse mesta
+                    },
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Text('Mesta (${spots.length})',
                     style: Theme.of(context).textTheme.titleMedium),
