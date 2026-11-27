@@ -62,9 +62,10 @@ class ApiClient {
     try {
       final json = jsonDecode(body);
       if (json is Map) {
-        final fields = json['fieldErrors'];
+        final fields = json['fieldErrors'] ?? json['errors'];
         if (fields is Map && fields.isNotEmpty) return fields.values.join('\n');
-        if (json['message'] is String) return json['message'];
+        final message = json['message'] ?? json['detail'];
+        if (message is String) return message;
       }
     } catch (_) {}
     return switch (status) {

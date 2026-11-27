@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../auth.dart';
+import 'lots_screen.dart';
 
 // pocetni ekran - prikazuje funkcije u zavisnosti od uloge
-// za sada pored svega pise uskoro
+// stavke koje jos nisu napravljene imaju oznaku "uskoro"
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -57,11 +58,23 @@ class HomeScreen extends StatelessWidget {
               child: ListTile(
                 leading: Icon(icon),
                 title: Text(title),
-                trailing: const Text('uskoro'),
+                trailing: _screenFor(title) == null
+                    ? const Text('uskoro')
+                    : const Icon(Icons.chevron_right),
+                onTap: _screenFor(title) == null
+                    ? null
+                    : () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => _screenFor(title)!)),
               ),
             ),
         ],
       ),
     );
   }
+
+  // koji ekran otvara stavku
+  static Widget? _screenFor(String title) => switch (title) {
+        'Lokacije i mesta' => const LotsScreen(),
+        _ => null,
+      };
 }
